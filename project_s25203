@@ -1,0 +1,186 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+interface Explosible {
+    void explode();
+}
+
+class OverfillException extends Exception {
+    public OverfillException(String message) {
+        super(message);
+    }
+}
+
+class Container {
+    private int loadWeight;
+    private int height;
+    private int length;
+    private int serialNumber;
+    private int maxWeight;
+
+    public Container(int loadWeight, int height, int length, int serialNumber, int maxWeight) {
+        this.loadWeight = loadWeight;
+        this.height = height;
+        this.length = length;
+        this.serialNumber = serialNumber;
+        this.maxWeight = maxWeight;
+    }
+
+    public void unloadCargo() {
+        loadWeight = 0;
+    }
+
+    public void loadCargo(int cargoWeight) throws OverfillException {
+        if (cargoWeight > maxWeight) {
+            throw new OverfillException("Cargo weight exceeds maximum weight.");
+        }
+        loadWeight = cargoWeight;
+    }
+
+    // Getters and setters
+}
+
+class LiquidContainer extends Container implements Explosible {
+    public LiquidContainer(int loadWeight, int height, int length, int serialNumber, int maxWeight) {
+        super(loadWeight, height, length, serialNumber, maxWeight);
+    }
+
+    @Override
+    public void loadCargo(int cargoWeight) throws OverfillException {
+        if (cargoWeight > getMaxWeight() / 2) {
+            explode();
+            throw new OverfillException("Cargo weight exceeds safe limit.");
+        }
+        super.loadCargo(cargoWeight);
+    }
+
+    @Override
+    public void explode() {
+        System.out.println("Liquid container with serial number: " + getSerialNumber() + " exploded!");
+    }
+}
+
+class GasContainer extends Container implements Explosible {
+    private int pressureLevel;
+
+    public GasContainer(int loadWeight, int height, int length, int serialNumber, int maxWeight, int pressureLevel) {
+        super(loadWeight, height, length, serialNumber, maxWeight);
+        this.pressureLevel = pressureLevel;
+    }
+
+    @Override
+    public void unloadCargo() {
+        setLoadWeight((int) (getLoadWeight() * 0.95));
+    }
+
+    @Override
+    public void loadCargo(int cargoWeight) throws OverfillException {
+        if (cargoWeight > getMaxWeight()) {
+            explode();
+            throw new OverfillException("Cargo weight exceeds maximum weight.");
+        }
+        super.loadCargo(cargoWeight);
+    }
+
+    @Override
+    public void explode() {
+        System.out.println("Gas container with serial number: " + getSerialNumber() + " exploded!");
+    }
+
+    // Getters and setters
+}
+
+class RefrigeratedContainer extends Container {
+    private int temperature;
+    private List<String> products;
+
+    {
+        products = new ArrayList<>();
+        products.add("czekolada");
+        products.add("mrożona pizza");
+        products.add("masło");
+        products.add("ser");
+    }
+
+    public RefrigeratedContainer(int loadWeight, int height, int length, int serialNumber, int maxWeight, int temperature) {
+        super(loadWeight, height, length, serialNumber, maxWeight);
+        this.temperature = temperature;
+    }
+
+    // Getters and setters
+}
+
+class ContainerShip {
+    private List<Container> containers;
+    private int maxSpeed;
+    private int maxContainerCount;
+
+    {
+        containers = new ArrayList<>();
+    }
+
+    public ContainerShip(int maxSpeed, int maxContainerCount) {
+        this.maxSpeed = maxSpeed;
+        this.maxContainerCount = maxContainerCount;
+    }
+
+    public void addContainer(Container container) {
+        containers.add(container);
+    }
+
+    public void addContainers(List<Container> containerList) {
+        containers.addAll(containerList);
+    }
+
+    public void removeContainer(Container container) {
+        containers.remove(container);
+    }
+
+    public void removeContainers(List<Container> containerList) {
+        containers.removeAll(containerList);
+    }
+
+    public void swapContainer(int position, Container container) {
+        containers.set(position, container);
+    }
+
+    public static void transferContainers(ContainerShip sourceShip, ContainerShip destinationShip) {
+        destinationShip.containers.addAll(sourceShip.containers);
+        sourceShip.containers.clear();
+    }
+
+    // Getters and setters
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ContainerShip ship1 = new ContainerShip(50, 10);
+
+        RefrigeratedContainer refrigeratedContainer = new RefrigeratedContainer(0, 200, 300, generateSerialNumber(), 500, -10);
+        LiquidContainer liquidContainer = new LiquidContainer(0, 150, 250, generateSerialNumber(), 1000);
+        GasContainer gasContainer = new GasContainer(0, 180, 280, generateSerialNumber(), 800, 5);
+
+        try {
+            refrigeratedContainer.loadCargo(200);
+            liquidContainer.loadCargo(600);
+            gasContainer.loadCargo(1000);
+        } catch (OverfillException e) {
+            System.out.println("Exception: " + e.getMessage());
+        }
+
+        ship1.addContainer(refrigeratedContainer);
+        ship1.addContainer(liquidContainer);
+        ship1.addContainer(gasContainer);
+
+        ContainerShip ship2 = new ContainerShip(60, 15);
+        ContainerShip.transferContainers(ship1, ship2);
+
+        ship2.removeContainers(ship2.getContainers());
+    }
+
+    private static int generateSerialNumber() {
+        Random random = new Random();
+        return random.nextInt(64798) + 25203;
+    }
+}
